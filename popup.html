@@ -1,0 +1,32 @@
+<style>
+body {
+    min-width:400px;
+    min-height: 400px;
+}
+
+iframe
+{
+    border: 0px;
+}
+</style>
+
+<script>
+var req = new XMLHttpRequest();
+req.open( "GET",
+    "http://json.searchyc.com/domains/find?url=" +
+            escape("http://explainextended.com/2010/12/31/happy-new-year-2/"),
+    true);
+req.onload = searchYC;
+req.send(null);
+
+function searchYC() {
+    var searchyc_results = JSON.parse(req.responseText);
+
+    // only load a new page if there were any results
+    if (searchyc_results.length > 0) {
+        // load the page in an iframe in the extension popup
+        document.write("<iframe src='http://news.ycombinator.com/item?id=" +
+            searchyc_results[0].id + "'></iframe>")
+    }
+}
+</script>
