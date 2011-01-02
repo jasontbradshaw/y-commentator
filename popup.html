@@ -1,12 +1,15 @@
 <style>
 body {
-    min-width:400px;
-    min-height: 400px;
+    min-width: 800px;
+    height: 400px;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
-iframe
-{
-    border: 0px;
+iframe {
+    margin-left: -10%;
+    margin-top: -10px;
+    border-width: 0px;
 }
 </style>
 
@@ -20,13 +23,17 @@ req.onload = searchYC;
 req.send(null);
 
 function searchYC() {
-    var searchyc_results = JSON.parse(req.responseText);
+    var results = JSON.parse(req.responseText);
 
     // only load a new page if there were any results
-    if (searchyc_results.length > 0) {
+    if (results.length > 0) {
         // load the page in an iframe in the extension popup
-        document.write("<iframe src='http://news.ycombinator.com/item?id=" +
-            searchyc_results[0].id + "'></iframe>")
+        var iframe = document.createElement("iframe");
+        iframe.src = "http://news.ycombinator.com/item?id=" + results[0].id;
+        iframe.width = "120%";
+        iframe.height = "103%";
+
+        document.body.appendChild(iframe);
     }
 }
 </script>
