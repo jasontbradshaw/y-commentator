@@ -146,12 +146,12 @@ function searchYC(tabId, changeInfo, tab) {
 
     // show the page action if the local item id was set
     if (newItemId > -1) {
-        console.log("Showing page action icon");
-        chrome.pageAction.show(tabId);
-
         // set the global item id so the popup can access it
         console.log("Setting global item id to " + newItemId);
         ITEM_ID = newItemId;
+
+        console.log("Showing page action icon");
+        chrome.pageAction.show(tabId);
     }
     // hide the action icon otherwise
     else {
