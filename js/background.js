@@ -15,16 +15,14 @@ function scrapeHandler(numPages) {
     scrapeAndUpdate("newest", numPages);
 
     // count and enumerate URLs in cache
-    console.log("Global URL cache:");
     var cacheSize = 0;
     for (var url in URL_CACHE) {
         if (URL_CACHE.hasOwnProperty(url)) {
             cacheSize += 1;
-            console.log("  '" + url + "': " + URL_CACHE[url]);
         }
     }
 
-    console.log("Cache has " + cacheSize + " items");
+    console.log("URL cache has " + cacheSize + " items");
 }
 
 // scrapes content directly from HN to fill in for lag in searchYC database.
