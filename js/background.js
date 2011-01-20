@@ -1,5 +1,29 @@
 // used to allow the popup to access the url of the current page's HN comments
-var commentId = -1;
+var COMMENT_ID = -1;
+
+// holds content scraped directly from HN to fill in when search.yc falls down.
+// contains URLs mapped to item id integers.
+var SCRAPED_URLS = new Object();
+
+// scrapes content directly from HN to fill in for lag in searchYC database.
+// updates the global object that holds the URLs in-place.
+function scrapeAndUpdate() {
+    // the URL to the Hacker News front page
+    var hnURL = "http://news.ycombinator.com/news";
+
+    // download the front page syncronously
+    var req = new XMLHttpRequest();
+    req.open("GET", hnURL, false);
+    req.send(null);
+
+    // exit if we couldn't access the page
+    if (req.status != 200) {
+        return;
+    }
+
+    var hnFrontpage = req.responseXML;
+    alert(hnFrontpage);
+}
 
 function searchYC(tabId, changeInfo, tab) {
     // the URL used to access searchyc.com's API
@@ -9,6 +33,11 @@ function searchYC(tabId, changeInfo, tab) {
     var req = new XMLHttpRequest();
     req.open("GET", searchURL + escape(tab.url), false);
     req.send(null);
+
+    // exit if we couldn't access the searchYC server
+    if (req.status != 200) {
+        return;
+    }
 
     // parse results
     var results = JSON.parse(req.responseText);
@@ -29,9 +58,8 @@ function searchYC(tabId, changeInfo, tab) {
         details.title = title;
         chrome.pageAction.setTitle(details);
 
-        // set the id used for getting an item's comments from HN so it can be
-        // viewed externally.
-        commentId = item["id"];
+        // set the global comment id variable
+        COMMENT_ID = item["id"];
 
         // show the icon
         chrome.pageAction.show(tabId);
