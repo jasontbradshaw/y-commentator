@@ -23,9 +23,16 @@ function scrapeAndUpdate(subdomain, numPages) {
     req.open("GET", hnBaseURL + subdomain, false);
     req.send(null);
 
+    console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
+
     // exit if we couldn't access the page
     if (req.status != 200) {
+        console.log("Failed to access '" + hnBaseURL + subdomain + "': " +
+                req.status + ", " + req.statusText);
         return;
+    }
+    else {
+        console.log("Got news.ycombinator.com response");
     }
 
     //  matches urls and their respective item ids
@@ -87,7 +94,8 @@ function searchYC(tabId, changeInfo, tab) {
 
     // exit if we couldn't access the searchYC server
     if (req.status != 200) {
-        console.error("Could not access searchYC: " + req.status + ", " + req.statusText);
+        console.error("Could not access searchYC: " +
+                req.status + ", " + req.statusText);
         return;
     }
     else {
@@ -96,7 +104,8 @@ function searchYC(tabId, changeInfo, tab) {
 
     // parse results
     var results = JSON.parse(req.responseText);
-    console.log("Successfully parsed response JSON, got " + results.length + " results");
+    console.log("Successfully parsed response JSON, got " + results.length +
+            " results");
 
     // only show the page action icon if there were any results
     if (results.length > 0) {
