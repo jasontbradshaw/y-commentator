@@ -1,17 +1,21 @@
-// run this function once the popup has loaded
+// runs after load so we ensure that we've got all the appropriate DOM elements
 window.onload = function() {
     // get the background page so we can get the item id for the current page
     var bgPage = chrome.extension.getBackgroundPage();
 
-    // if the page had comments, update the popup
-    if (bgPage.ITEM_ID >= 0) {
-        console.log("Updating popup for item id " + bgPage.ITEM_ID);
+    // get the item id for the currently selected tab
+    var itemId = bgPage.ITEM_CACHE[bgPage.CURRENT_TAB_ID];
+    console.log("Got item id " + itemId +
+            " for tab id " + bgPage.CURRENT_TAB_ID);
 
+    // if the page had comments, update the popup
+    if (itemId >= 0) {
+        // base URL for HN comment threads
         var hnItemURL = "http://news.ycombinator.com/item?id=";
 
         // load the page in an iframe in the extension popup using the item id
         var iframe = document.createElement("iframe");
-        iframe.src = hnItemURL + bgPage.ITEM_ID;
+        iframe.src = hnItemURL + itemId;
         iframe.width = "120%";
         iframe.height = "103%";
 
@@ -20,6 +24,6 @@ window.onload = function() {
         document.body.appendChild(iframe);
     }
     else {
-        console.error("Invalid item id: " + bgPage.ITEM_ID);
+        console.error("Invalid item id: " + itemId);
     }
 }

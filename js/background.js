@@ -1,5 +1,9 @@
 // used to allow the popup to access the url of the current page's HN comments
-var ITEM_ID = -1;
+var ITEM_CACHE = new Object();
+
+// the id of the currently selected tab.  allows the popup to grab the
+// appropriate item id from the global item cache.
+var CURRENT_TAB_ID = -1;
 
 // holds content scraped directly from HN to fill in where search.yc falls down.
 // contains URLs mapped to item id integers.
@@ -159,9 +163,9 @@ function searchYC(tabId, changeInfo, tab) {
 
     // show the page action if the local item id was set
     if (newItemId > -1) {
-        // set the global item id so the popup can access it
-        console.log("Setting global item id to " + newItemId);
-        ITEM_ID = newItemId;
+        // cache the global item id so the popup can access it
+        console.log("Caching item id " + newItemId + " for tab id " + tab.id);
+        ITEM_CACHE[tab.id] = newItemId;
 
         console.log("Showing page action icon");
         chrome.pageAction.show(tabId);
@@ -173,9 +177,20 @@ function searchYC(tabId, changeInfo, tab) {
     }
 }
 
+// updates the global current tab id so the popup can access the appropriate
+// item cache entry.
+function updateCurrentTabId(tabId, selectInfo) {
+    console.log("Setting global current tab id to " + tabId);
+    CURRENT_TAB_ID = tabId;
+}
+
 // listen for changes to any tab so we can check for HN content for its URL
 console.log("Setting tab update event listener");
 chrome.tabs.onUpdated.addListener(searchYC);
+
+// listen tor tab selection changes so we can update the current global tab id
+console.log("Setting tab selection change event listener");
+chrome.tabs.onSelectionChanged.addListener(updateCurrentTabId);
 
 // scrape for content periodically
 var scrapeInterval = 180000; // 3 minutes
