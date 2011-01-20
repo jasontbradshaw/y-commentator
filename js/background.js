@@ -1,19 +1,26 @@
 // used to allow the popup to access the url of the current page's HN comments
 var ITEM_ID = -1;
 
-// holds content scraped directly from HN to fill in when search.yc falls down.
+// holds content scraped directly from HN to fill in where search.yc falls down.
 // contains URLs mapped to item id integers.
-var SCRAPED_URLS = new Object();
+var URL_CACHE = new Object();
 
 // scrapes content directly from HN to fill in for lag in searchYC database.
 // updates the global object that holds the URLs in-place.
-function scrapeAndUpdate() {
-    // the URL to the Hacker News front page
-    var hnURL = "http://news.ycombinator.com/news";
+function scrapeAndUpdate(subdomain, numPages) {
+    // bottom out when we've hit our page quota
+    if (numPages <= 0) {
+        return;
+    }
 
-    // download the front page syncronously
+    // TODO: don't scrape if the cache is really large, log that fact
+
+    // the base URL for Hacker News, which we append the given subdomain to
+    var hnBaseURL = "http://news.ycombinator.com/";
+
+    // download the requested page syncronously
     var req = new XMLHttpRequest();
-    req.open("GET", hnURL, false);
+    req.open("GET", hnBaseURL + subdomain, false);
     req.send(null);
 
     // exit if we couldn't access the page
@@ -21,8 +28,50 @@ function scrapeAndUpdate() {
         return;
     }
 
-    var hnFrontpage = req.responseXML;
-    alert(hnFrontpage);
+    //  matches urls and their respective item ids
+    var itemPattern = '<td class="title"><a href="(.+?)">.+?';
+    itemPattern += '<td class="subtext"><span id=score_([0-9]+)>';
+    itemRegex = new RegExp(itemPattern, "g");
+
+    // matches the 'More' link to the next page of results
+    var morePattern = '<a href="/(x[?]fnid=.+?)" rel="nofollow">More</a></td></tr>';
+    moreRegex = new RegExp(morePattern);
+
+    // matches items that refer directly to HN threads (we'll ignore these)
+    var hnItemPattern = 'item[?]id=[0-9]+';
+    var hnItemRegex = new RegExp(hnItemPattern);
+
+    // iterate over all the matched items in this page's HTML
+    var hnPage = req.responseText;
+    var match = itemRegex.exec(hnPage);
+
+    // ensure we're working against a correct match
+    while (match != null && match.length == 3) {
+        // get the useful parts of each matched item
+        var itemURL = match[1];
+        var itemId = match[2];
+
+        // skip items that refer to Hacker News threads
+        if (hnItemRegex.test(itemURL)) {
+            continue;
+        }
+
+        // add or update the url/id relationship to the cache
+        URL_CACHE[itemURL] = parseInt(itemId);
+
+        // advance the match over the page HTML
+        match = itemRegex.exec(hnPage);
+    }
+
+    // parse out the link to 'More' so we can continue grabbing items
+    var moreLink = "";
+    var moreMatch = moreRegex.exec(hnPage);
+    if (moreMatch != null && moreMatch.length == 2) {
+        moreLink = moreMatch[1];
+    }
+
+    // continue onward to download the next page, decrementing the page counter
+    scrapeAndUpdate(moreLink, numPages - 1);
 }
 
 function searchYC(tabId, changeInfo, tab) {
