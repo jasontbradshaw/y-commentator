@@ -1,5 +1,5 @@
 // used to allow the popup to access the url of the current page's HN comments
-var COMMENT_ID = -1;
+var ITEM_ID = -1;
 
 // holds content scraped directly from HN to fill in when search.yc falls down.
 // contains URLs mapped to item id integers.
@@ -58,8 +58,8 @@ function searchYC(tabId, changeInfo, tab) {
         details.title = title;
         chrome.pageAction.setTitle(details);
 
-        // set the global comment id variable
-        COMMENT_ID = item["id"];
+        // set the global item id variable
+        ITEM_ID = item["id"];
 
         // show the icon
         chrome.pageAction.show(tabId);
