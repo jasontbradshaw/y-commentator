@@ -16,9 +16,7 @@ window.onload = function() {
         // load the page in an iframe in the extension popup using the item id
         var hnFrame = document.getElementById("hn_frame");
         hnFrame.src = hnItemURL + itemId;
-
-        // append the iframe to the popup body
-        console.log("Updating iframe with address '" + hnFrame.src + "'");
+        console.log("Updated iframe with address '" + hnFrame.src + "'");
     }
     else {
         console.error("Invalid item id: " + itemId);
