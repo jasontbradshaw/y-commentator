@@ -1,22 +1,17 @@
-var req = new XMLHttpRequest();
-req.open( "GET",
-    "http://json.searchyc.com/domains/find?url=" +
-            escape("http://explainextended.com/2010/12/31/happy-new-year-2/"),
-    true);
-req.onload = searchYC;
-req.send(null);
+// run this function once the popup has loaded
+window.onload = function() {
+    // get the background page so we can get the comment id for the current page
+    var bgPage = chrome.extension.getBackgroundPage();
 
-function searchYC() {
-    var results = JSON.parse(req.responseText);
-
-    // only load a new page if there were any results
-    if (results.length > 0) {
-        // load the page in an iframe in the extension popup
+    // if the page has comments, update the popup
+    if (bgPage.commentId >= 0) {
+        // load the page in an iframe in the extension popup using the bg page's URL
         var iframe = document.createElement("iframe");
-        iframe.src = "http://news.ycombinator.com/item?id=" + results[0].id;
+        iframe.src = "http://news.ycombinator.com/item?id=" + bgPage.commentId;
         iframe.width = "120%";
         iframe.height = "103%";
 
+        // append the iframe to the popup body
         document.body.appendChild(iframe);
     }
 }

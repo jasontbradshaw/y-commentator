@@ -1,5 +1,5 @@
 // used to allow the popup to access the url of the current page's HN comments
-var commentURL = "";
+var commentId = -1;
 
 function searchYC(tabId, changeInfo, tab) {
     // the URL used to access searchyc.com's API
@@ -29,20 +29,14 @@ function searchYC(tabId, changeInfo, tab) {
         details.title = title;
         chrome.pageAction.setTitle(details);
 
-        // set the url for getting an item from news.ycombinator.com by its id
-        // so the popup can access it.
-        commentURL = "http://news.ycombinator.com/item?id=" + item["id"];
-
-        // set the action's popup to the HTML
-        details = new Object();
-        details.tabId = tabId;
-        details.popup = "popup.html";
-        chrome.pageAction.setPopup(details);
+        // set the id used for getting an item's comments from HN so it can be
+        // viewed externally.
+        commentId = item["id"];
 
         // show the icon
         chrome.pageAction.show(tabId);
     }
-    // hide the page action with 0 results (ensure it's not visible)
+    // hide the page action when there are no results
     else {
         chrome.pageAction.hide(tabId);
     }
