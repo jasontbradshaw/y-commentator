@@ -133,19 +133,6 @@ function searchYC(tabId, changeInfo, tab) {
         // get the first result, the only one we'll display
         item = results[0];
 
-        // create a title string for the action
-        var title = item["points"] + " points"
-        title += " by " + item["username"];
-        title += " on " + item["post_date"];
-
-        // set the hover text of the icon
-        var details = new Object();
-        details.tabId = tabId;
-        details.title = title;
-
-        console.log("Setting icon title text to: '" + title + "'");
-        chrome.pageAction.setTitle(details);
-
         // set the global item id variable
         console.log("Setting global item id to " + item["id"]);
         ITEM_ID = item["id"];
