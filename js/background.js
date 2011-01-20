@@ -5,16 +5,10 @@ var ITEM_ID = -1;
 // contains URLs mapped to item id integers.
 var URL_CACHE = new Object();
 
-// scrapes the HN front page and 'newest' page, updating the URL cache
-function scrapeHandler() {
-    var numNewsPages = 3;
-    var numNewestPages = 5;
-
-    console.log("Scraping " + numNewsPages + " 'news' pages");
-    scrapeAndUpdate("news", numNewsPages);
-
-    console.log("Scraping " + numNewestPages + " 'newest' pages");
-    scrapeAndUpdate("newest", numNewestPages);
+// scrapes the HN 'newest' page, updating the URL cache
+function scrapeHandler(numPages) {
+    console.log("Scraping " + numPages + " 'newest' pages");
+    scrapeAndUpdate("newest", numPages);
 
     // count number of URLs in cache
     var urlCacheSize = 0;
@@ -25,11 +19,7 @@ function scrapeHandler() {
     }
 
     console.log("URL cache has " + urlCacheSize + " items");
-    for (var url in URL_CACHE) {
-        if (URL_CACHE.hasOwnProperty(url)) {
-            console.log("  '" + url + "': " + URL_CACHE[url]);
-        }
-    }
+    console.log(URL_CACHE);
 }
 
 // scrapes content directly from HN to fill in for lag in searchYC database.
@@ -170,15 +160,15 @@ function searchYC(tabId, changeInfo, tab) {
     }
 }
 
-// do an initial scrape
-console.log("Doing initial content scrape");
-scrapeHandler();
-
-// continue scraping for content periodically
-var scrapeInterval = 900000; // 15 minutes
-console.log("Setting scrape interval to " + scrapeInterval + " ms");
-setInterval("scrapeHandler()", scrapeInterval);
-
 // listen for changes to any tab so we can check for HN content for its URL
 console.log("Setting tab update event listener");
 chrome.tabs.onUpdated.addListener(searchYC);
+
+// scrape for content periodically
+var scrapeInterval = 180000; // 3 minutes
+console.log("Setting scrape interval to " + scrapeInterval + " ms");
+setInterval("scrapeHandler(2)", scrapeInterval);
+
+// do an initial scrape, deeper than the periodic one
+console.log("Doing initial content scrape");
+scrapeHandler(10);
