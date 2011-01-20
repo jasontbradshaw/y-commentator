@@ -14,14 +14,11 @@ window.onload = function() {
         var hnItemURL = "http://news.ycombinator.com/item?id=";
 
         // load the page in an iframe in the extension popup using the item id
-        var iframe = document.createElement("iframe");
-        iframe.src = hnItemURL + itemId;
-        iframe.width = "120%";
-        iframe.height = "103%";
+        var hnFrame = document.getElementById("hn_frame");
+        hnFrame.src = hnItemURL + itemId;
 
         // append the iframe to the popup body
-        console.log("Adding iframe with address '" + iframe.src + "'");
-        document.body.appendChild(iframe);
+        console.log("Updating iframe with address '" + hnFrame.src + "'");
     }
     else {
         console.error("Invalid item id: " + itemId);
