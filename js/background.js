@@ -1,3 +1,6 @@
+// used to allow the popup to access the url of the current page's HN comments
+var commentURL = "";
+
 function searchYC(tabId, changeInfo, tab) {
     // the URL used to access searchyc.com's API
     var searchURL = "http://json.searchyc.com/domains/find?url=";
@@ -26,16 +29,15 @@ function searchYC(tabId, changeInfo, tab) {
         details.title = title;
         chrome.pageAction.setTitle(details);
 
-        // the url for getting an item from news.ycombinator.com by its id
-        var commentURL = "http://news.ycombinator.com/item?id=" + item["id"];
+        // set the url for getting an item from news.ycombinator.com by its id
+        // so the popup can access it.
+        commentURL = "http://news.ycombinator.com/item?id=" + item["id"];
 
-        // create the HTML for displaying the comments in an iframe
-        var html = '<html><head>';
-        html += '<link rel="stylesheet" href="css/style.css" type="text/css" />';
-        html += '</head><body>';
-        html += '<iframe src="' + commentURL;
-        html += '" width="120%" height="103%"></iframe>';
-        html += '</body></html>';
+        // set the action's popup to the HTML
+        details = new Object();
+        details.tabId = tabId;
+        details.popup = "popup.html";
+        chrome.pageAction.setPopup(details);
 
         // show the icon
         chrome.pageAction.show(tabId);
