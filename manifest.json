@@ -1,7 +1,7 @@
 {
     "name": "Hacker News Commentify",
     "version": "1.0",
-    "description": "Displays available Hacker News comments for the current page.",
+    "description": "Displays Hacker News comments for the current page.",
     "background_page": "background.html",
     "page_action": {
         "default_icon": "icon.png",
