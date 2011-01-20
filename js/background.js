@@ -5,6 +5,29 @@ var ITEM_ID = -1;
 // contains URLs mapped to item id integers.
 var URL_CACHE = new Object();
 
+// scrapes the HN front page and 'newest' page, updating the URL cache
+function scrapeHandler() {
+    var numNewsPages = 3;
+    var numNewestPages = 5;
+
+    console.log("Scraping " + numNewsPages + " news pages");
+    scrapeAndUpdate("news", numNewsPages);
+
+    console.log("Scraping " + numNewestPages + " newest pages");
+    scrapeAndUpdate("newest", numNewestPages);
+
+    // count number of URLs in cache
+    var urlCacheSize = 0;
+    for (var url in URL_CACHE) {
+        if (URL_CACHE.hasOwnProperty(url)) {
+            urlCacheSize += 1;
+        }
+    }
+
+    console.log("URL cache has " + urlCacheSize + " items");
+    console.log(URL_CACHE);
+}
+
 // scrapes content directly from HN to fill in for lag in searchYC database.
 // updates the global object that holds the URLs in-place.
 function scrapeAndUpdate(subdomain, numPages) {
@@ -58,13 +81,11 @@ function scrapeAndUpdate(subdomain, numPages) {
         var itemURL = match[1];
         var itemId = match[2];
 
-        // skip items that refer to Hacker News threads
-        if (hnItemRegex.test(itemURL)) {
-            continue;
+        // only add items that don't refer to Hacker News threads
+        if (!hnItemRegex.test(itemURL)) {
+            // add or update the url/id relationship to the cache
+            URL_CACHE[itemURL] = parseInt(itemId);
         }
-
-        // add or update the url/id relationship to the cache
-        URL_CACHE[itemURL] = parseInt(itemId);
 
         // advance the match over the page HTML
         match = itemRegex.exec(hnPage);
@@ -140,5 +161,12 @@ function searchYC(tabId, changeInfo, tab) {
     }
 }
 
-// listen for changes to any tab
+// do an initial scrape
+scrapeHandler();
+
+// continue scraping for content periodically
+var scrapeInterval = 900000; // 15 minutes
+setInterval("scrapeHandler()", scrapeInterval);
+
+// listen for changes to any tab so we can check for HN content for its URL
 chrome.tabs.onUpdated.addListener(searchYC);
