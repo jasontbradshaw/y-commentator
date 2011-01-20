@@ -10,10 +10,10 @@ function scrapeHandler() {
     var numNewsPages = 3;
     var numNewestPages = 5;
 
-    console.log("Scraping " + numNewsPages + " news pages");
+    console.log("Scraping " + numNewsPages + " 'news' pages");
     scrapeAndUpdate("news", numNewsPages);
 
-    console.log("Scraping " + numNewestPages + " newest pages");
+    console.log("Scraping " + numNewestPages + " 'newest' pages");
     scrapeAndUpdate("newest", numNewestPages);
 
     // count number of URLs in cache
