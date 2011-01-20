@@ -1,5 +1,5 @@
 body {
-    min-width: 800px;
+    width: 800px;
     height: 400px;
     overflow-x: hidden;
     overflow-y: hidden;
@@ -9,4 +9,6 @@ iframe {
     margin-left: -10%;
     margin-top: -10px;
     border-width: 0px;
+    width: 120%;
+    height: 103%;
 }
