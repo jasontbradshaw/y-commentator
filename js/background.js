@@ -10,16 +10,17 @@ function scrapeHandler(numPages) {
     console.log("Scraping " + numPages + " 'newest' pages");
     scrapeAndUpdate("newest", numPages);
 
-    // count number of URLs in cache
-    var urlCacheSize = 0;
+    // count and enumerate URLs in cache
+    console.log("Global URL cache:");
+    var cacheSize = 0;
     for (var url in URL_CACHE) {
         if (URL_CACHE.hasOwnProperty(url)) {
-            urlCacheSize += 1;
+            cacheSize += 1;
+            console.log("  '" + url + "': " + URL_CACHE[url]);
         }
     }
 
-    console.log("URL cache has " + urlCacheSize + " items");
-    console.log(URL_CACHE);
+    console.log("Cache has " + cacheSize + " items");
 }
 
 // scrapes content directly from HN to fill in for lag in searchYC database.
@@ -96,7 +97,17 @@ function scrapeAndUpdate(subdomain, numPages) {
     scrapeAndUpdate(moreLink, numPages - 1);
 }
 
+// searches the URL cache, then searchyc.com's archive for the current tab's
+// URL, then stores its id into a global variable accessible from the popup.
 function searchYC(tabId, changeInfo, tab) {
+    // don't run when tab isn't loading. keeps from running twice when
+    // 'loading' as well as when 'complete'.  we run when 'loading' since it
+    // shows the icon almost immediately rather than having to wait for the page
+    // to load first.
+    if (changeInfo.status != "loading") {
+        return;
+    }
+
     // used later to set global id and icon visibility
     var newItemId = -1;
 
