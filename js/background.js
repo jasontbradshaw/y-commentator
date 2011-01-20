@@ -111,8 +111,7 @@ function searchYC(tabId, changeInfo, tab) {
         // the URL used to access searchyc.com's API
         var searchURL = "http://json.searchyc.com/domains/find?url=";
 
-        console.log("URL not in cache, requesting data for url: '" +
-                searchURL + escape(tab.url) + "'");
+        console.log("URL not in cache, requesting data for '" + tab.url + "'");
 
         // issue a synchronous request for the page data
         var req = new XMLHttpRequest();
@@ -131,8 +130,7 @@ function searchYC(tabId, changeInfo, tab) {
 
         // parse results
         var results = JSON.parse(req.responseText);
-        console.log("Successfully parsed response JSON, got " + results.length +
-                " results");
+        console.log("Parsed response JSON, got " + results.length + " results");
 
         // only show the page action icon if there were any results
         if (results.length > 0) {
@@ -141,6 +139,10 @@ function searchYC(tabId, changeInfo, tab) {
 
             // set the local item id variable
             newItemId = item["id"];
+
+            // add the new URL to the global cache
+            console.log("Adding searchYC response data to global URL cache");
+            URL_CACHE[tab.url] = newItemId;
         }
     }
 
@@ -166,8 +168,9 @@ chrome.tabs.onUpdated.addListener(searchYC);
 
 // scrape for content periodically
 var scrapeInterval = 180000; // 3 minutes
+var numPeriodicPages = 2;
 console.log("Setting scrape interval to " + scrapeInterval + " ms");
-setInterval("scrapeHandler(2)", scrapeInterval);
+setInterval("scrapeHandler(" + numPeriodicPages + ")", scrapeInterval);
 
 // do an initial scrape, deeper than the periodic one
 console.log("Doing initial content scrape");
