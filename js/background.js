@@ -25,7 +25,11 @@ function scrapeHandler() {
     }
 
     console.log("URL cache has " + urlCacheSize + " items");
-    console.log(URL_CACHE);
+    for (var url in URL_CACHE) {
+        if (URL_CACHE.hasOwnProperty(url)) {
+            console.log("  '" + url + "': " + URL_CACHE[url]);
+        }
+    }
 }
 
 // scrapes content directly from HN to fill in for lag in searchYC database.
@@ -59,7 +63,7 @@ function scrapeAndUpdate(subdomain, numPages) {
     }
 
     //  matches urls and their respective item ids
-    var itemPattern = '<td class="title"><a href="(.+?)">.+?';
+    var itemPattern = '<td class="title"><a href="(.+?)"(?: rel="nofollow")?>.+?';
     itemPattern += '<td class="subtext"><span id=score_([0-9]+)>';
     itemRegex = new RegExp(itemPattern, "g");
 
@@ -103,57 +107,78 @@ function scrapeAndUpdate(subdomain, numPages) {
 }
 
 function searchYC(tabId, changeInfo, tab) {
-    // the URL used to access searchyc.com's API
-    var searchURL = "http://json.searchyc.com/domains/find?url=";
+    // used later to set global id and icon visibility
+    var newItemId = -1;
 
-    console.log("Requesting data for url: '" + searchURL + escape(tab.url) + "'");
-
-    // issue a synchronous request for the page data
-    var req = new XMLHttpRequest();
-    req.open("GET", searchURL + escape(tab.url), false);
-    req.send(null);
-
-    // exit if we couldn't access the searchYC server
-    if (req.status != 200) {
-        console.error("Could not access searchYC: " +
-                req.status + ", " + req.statusText);
-        return;
+    // check the cache for the URL before hitting searchYC
+    if (URL_CACHE[tab.url] != null) {
+        newItemId = URL_CACHE[tab.url];
+        console.log("Found '" + tab.url + "' in cache, item id " + newItemId);
     }
+
+    // ask the remote server for the URL
     else {
-        console.log("Got searchYC response");
+        // the URL used to access searchyc.com's API
+        var searchURL = "http://json.searchyc.com/domains/find?url=";
+
+        console.log("URL not in cache, requesting data for url: '" +
+                searchURL + escape(tab.url) + "'");
+
+        // issue a synchronous request for the page data
+        var req = new XMLHttpRequest();
+        req.open("GET", searchURL + escape(tab.url), false);
+        req.send(null);
+
+        // exit if we couldn't access the searchYC server
+        if (req.status != 200) {
+            console.error("Could not access searchYC: " +
+                    req.status + ", " + req.statusText);
+            return;
+        }
+        else {
+            console.log("Got searchYC response");
+        }
+
+        // parse results
+        var results = JSON.parse(req.responseText);
+        console.log("Successfully parsed response JSON, got " + results.length +
+                " results");
+
+        // only show the page action icon if there were any results
+        if (results.length > 0) {
+            // get the first result, the only one we'll consider
+            item = results[0];
+
+            // set the local item id variable
+            newItemId = item["id"];
+        }
     }
 
-    // parse results
-    var results = JSON.parse(req.responseText);
-    console.log("Successfully parsed response JSON, got " + results.length +
-            " results");
-
-    // only show the page action icon if there were any results
-    if (results.length > 0) {
-        // get the first result, the only one we'll display
-        item = results[0];
-
-        // set the global item id variable
-        console.log("Setting global item id to " + item["id"]);
-        ITEM_ID = item["id"];
-
-        // show the icon
-        console.log("Showing action icon");
+    // show the page action if the local item id was set
+    if (newItemId > -1) {
+        console.log("Showing page action icon");
         chrome.pageAction.show(tabId);
+
+        // set the global item id so the popup can access it
+        console.log("Setting global item id to " + newItemId);
+        ITEM_ID = newItemId;
     }
-    // hide the page action when there are no results
+    // hide the action icon otherwise
     else {
-        console.log("Hiding action icon");
+        console.log("Hiding page action icon");
         chrome.pageAction.hide(tabId);
     }
 }
 
 // do an initial scrape
+console.log("Doing initial content scrape");
 scrapeHandler();
 
 // continue scraping for content periodically
 var scrapeInterval = 900000; // 15 minutes
+console.log("Setting scrape interval to " + scrapeInterval + " ms");
 setInterval("scrapeHandler()", scrapeInterval);
 
 // listen for changes to any tab so we can check for HN content for its URL
+console.log("Setting tab update event listener");
 chrome.tabs.onUpdated.addListener(searchYC);
