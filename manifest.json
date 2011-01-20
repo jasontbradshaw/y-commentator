@@ -1,12 +1,13 @@
 {
     "name": "Hacker News Commentify",
     "version": "1.0",
-    "description": "Displays Hacker News comments for the current web page.",
-    "browser_action": {
+    "description": "Displays available Hacker News comments for the current page.",
+    "background_page": "background.html",
+    "page_action": {
         "default_icon": "icon.png",
-        "popup": "popup.html"
     },
     "permissions": [
+        "tabs",
         "http://json.searchyc.com/",
         "http://news.ycombinator.com/"
     ]
