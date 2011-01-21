@@ -19,6 +19,6 @@ window.onload = function() {
         console.log("Updated iframe with address '" + hnFrame.src + "'");
     }
     else {
-        console.error("Invalid item id: " + itemId);
+        console.error("Couldn't load iframe, invalid item id " + itemId);
     }
 }
