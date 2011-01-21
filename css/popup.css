@@ -5,10 +5,11 @@ body {
     overflow-y: hidden;
 }
 
-iframe {
-    margin-left: -10%;
-    margin-top: -10px;
-    border-width: 0px;
-    width: 120%;
-    height: 103%;
+#content {
+    height: 100%;
+    width: 790px;
+    margin-left: -5px;
+
+    overflow: scroll;
+    overflow-x: auto;
 }

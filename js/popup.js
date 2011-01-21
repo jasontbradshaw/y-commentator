@@ -13,12 +13,39 @@ window.onload = function() {
         // base URL for HN comment threads
         var hnItemURL = "http://news.ycombinator.com/item?id=";
 
-        // load the page in an iframe in the extension popup using the item id
-        var hnFrame = document.getElementById("hn_frame");
-        hnFrame.src = hnItemURL + itemId;
-        console.log("Updated iframe with address '" + hnFrame.src + "'");
+        // download HN comments page for the item
+        var req = new XMLHttpRequest();
+        req.open("GET", hnItemURL + itemId, false);
+        req.send(null);
+
+        if (req.status != 200) {
+            console.error("Failed to download '" + hnItemURL + itemId + "'");
+            return;
+        }
+
+        // insert the downloaded HTML content into the local content div
+        var contentDiv = document.getElementById("content");
+        contentDiv.innerHTML = req.responseText;
+
+        // replace old relative links with explicit ones. the only relative
+        // links appear to be those linking to 'news.ycombinator.com/', so we
+        // should be able to replace them without much trouble.
+        var links = contentDiv.getElementsByTagName("a");
+        for (var i = 0; i < links.length; i++) {
+            link = links[i];
+
+            // replace all chrome's relative re-linking with our own
+            var ycBaseURL = "http://news.ycombinator.com/";
+            var extensionPattern = "chrome-extension://[A-Za-z0-9_]+/";
+            var extensionRegex = new RegExp(extensionPattern);
+            
+            link.href = link.href.replace(extensionRegex, ycBaseURL);
+        }
+
+        // make the main table take up the entire width of the div
+        contentDiv.getElementsByTagName("table")[0].width = "99%";
     }
     else {
-        console.error("Couldn't load iframe, invalid item id " + itemId);
+        console.error("Can't load comment thread, invalid item id " + itemId);
     }
 }
