@@ -10,9 +10,12 @@ var CURRENT_TAB_ID = -1;
 var URL_CACHE = new Object();
 
 // scrapes the HN 'newest' page, updating the URL cache
-function scrapeHandler(numPages) {
-    console.log("Scraping " + numPages + " 'newest' pages");
-    scrapeAndUpdate("newest", numPages);
+function scrapeHandler(numNewsPages, numNewestPages) {
+    console.log("Scraping " + numNewsPages + " 'news' pages");
+    scrapeAndUpdate("news", numNewsPages);
+
+    console.log("Scraping " + numNewestPages + " 'newest' pages");
+    scrapeAndUpdate("newest", numNewestPages);
 
     // count and enumerate URLs in cache
     var cacheSize = 0;
@@ -192,10 +195,9 @@ chrome.tabs.onSelectionChanged.addListener(updateCurrentTabId);
 
 // scrape for content periodically
 var scrapeInterval = 180000; // 3 minutes
-var numPeriodicPages = 2;
 console.log("Setting scrape interval to " + scrapeInterval + " ms");
-setInterval("scrapeHandler(" + numPeriodicPages + ")", scrapeInterval);
+setInterval("scrapeHandler(" + 1 + ", " + 2 + ")", scrapeInterval);
 
 // do an initial scrape, deeper than the periodic one
 console.log("Doing initial content scrape");
-scrapeHandler(10);
+scrapeHandler(5, 10);
