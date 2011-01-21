@@ -50,7 +50,7 @@ function scrapeAndUpdate(subdomain, numPages) {
 
     // exit if we couldn't access the page
     if (req.status != 200) {
-        console.log("Failed to access '" + hnBaseURL + subdomain + "': " +
+        console.error("Failed to access '" + hnBaseURL + subdomain + "': " +
                 req.status + ", " + req.statusText);
         return;
     }
