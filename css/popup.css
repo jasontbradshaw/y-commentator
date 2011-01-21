@@ -11,5 +11,5 @@ body {
     margin-left: -5px;
 
     overflow: scroll;
-    overflow-x: auto;
+    overflow-x: hidden;
 }
