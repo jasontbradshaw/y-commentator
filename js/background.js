@@ -147,8 +147,8 @@ function searchYC(tabId, changeInfo, tab) {
 
         // only show the page action icon if there were any results
         if (results.length > 0) {
-            // get the first result, the only one we'll consider
-            item = results[0];
+            // get the last result, as it's the most recent (and relevant?)
+            item = results[results.length - 1];
 
             // set the local item id variable
             newItemId = item["id"];
