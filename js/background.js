@@ -164,9 +164,6 @@ function searchYC(tabId, changeInfo, tab) {
                     req.status + ", " + req.statusText);
             return;
         }
-        else {
-            console.log("Got searchYC response");
-        }
 
         // parse results
         var results = JSON.parse(req.responseText);
