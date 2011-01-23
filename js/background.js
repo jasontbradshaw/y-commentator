@@ -1,21 +1,21 @@
 // used to allow the popup to access the url of the current page's HN comments
 var ITEM_CACHE = new Object();
 
-// the id of the currently selected tab.  allows the popup to grab the
-// appropriate item id from the global item cache.
-var CURRENT_TAB_ID = -1;
-
 // holds content scraped directly from HN to fill in where search.yc falls down.
 // contains URLs mapped to item id integers.
 var URL_CACHE = new Object();
 
-// scrapes the HN 'newest' page, updating the URL cache
+// the id of the currently selected tab.  allows the popup to grab the
+// appropriate item id from the global item cache.
+var CURRENT_TAB_ID = -1;
+
+// scrapes HN, updating the URL cache
 function scrapeHandler(numNewsPages, numNewestPages) {
     console.log("Scraping " + numNewsPages + " 'news' pages");
-    scrapeAndUpdate("news", numNewsPages);
+    scrapeAndUpdate("/news", numNewsPages);
 
     console.log("Scraping " + numNewestPages + " 'newest' pages");
-    scrapeAndUpdate("newest", numNewestPages);
+    scrapeAndUpdate("/newest", numNewestPages);
 
     // count and enumerate URLs in cache
     var cacheSize = 0;
@@ -39,7 +39,7 @@ function scrapeAndUpdate(subdomain, numPages) {
     // TODO: don't scrape if the cache is really large, log that fact
 
     // the base URL for Hacker News, which we append the given subdomain to
-    var hnBaseURL = "http://news.ycombinator.com/";
+    var hnBaseURL = "http://news.ycombinator.com";
 
     // download the requested page syncronously
     var req = new XMLHttpRequest();
@@ -54,51 +54,74 @@ function scrapeAndUpdate(subdomain, numPages) {
                 req.status + ", " + req.statusText);
         return;
     }
-    else {
-        console.log("Got news.ycombinator.com response");
+
+    // render the HTML to a DOM element so we can navigate the heirarchy
+    var hnPage = document.createElement("div");
+    hnPage.innerHTML = req.responseText;
+
+    // find all the item titles
+    var tds = hnPage.getElementsByTagName("td");
+
+    console.log("Searching " + tds.length + " td elements for matching titles");
+
+    var titles = [];
+    for (var i = 0; i < tds.length; i++) {
+        var td = tds[i];
+
+        // match titles with only 'class' attributes, nothing else
+        var c = td.attributes.getNamedItem("class");
+        if (c != null && c.value == "title" && td.attributes.length == 1) {
+            titles.push(td);
+        }
     }
 
-    //  matches urls and their respective item ids
-    var itemPattern = '<td class="title"><a href="(.+?)"(?: rel="nofollow")?>.+?';
-    itemPattern += '<td class="subtext"><span id=score_([0-9]+)>';
-    itemRegex = new RegExp(itemPattern, "g");
+    console.log("Found " + titles.length + " title items");
 
-    // matches the 'More' link to the next page of results
-    var morePattern = '<a href="/(x[?]fnid=.+?)" rel="nofollow">More</a></td></tr>';
-    moreRegex = new RegExp(morePattern);
+    // make sure we matched the expected number of total titles
+    var expectedItems = 31;
+    if (titles.length != expectedItems) {
+        console.warning("Found " + titles.length + " items, expecting " +
+                expectedItems);
+    }
 
-    // matches items that refer directly to HN threads (we'll ignore these)
-    var hnItemPattern = 'item[?]id=[0-9]+';
+    // remove and save the final title, the only 'More' link
+    var more = titles.pop();
+
+    // we'll use this regex to ignore items that link directly to HN comments
+    var hnItemPattern = "item[?]id=[0-9]+";
     var hnItemRegex = new RegExp(hnItemPattern);
 
-    // iterate over all the matched items in this page's HTML
-    var hnPage = req.responseText;
-    var match = itemRegex.exec(hnPage);
+    // add all the title and their matching subtexts to the global item cache
+    var addedCount = 0;
+    for (var i = 0; i < titles.length; i++) {
+        var title = titles[i];
 
-    // ensure we're working against a correct match
-    while (match != null && match.length == 3) {
-        // get the useful parts of each matched item
-        var itemURL = match[1];
-        var itemId = match[2];
+        // get the first link's URL, the first child of the title td
+        var a = title.firstChild;
+        var itemURL = a.attributes.getNamedItem("href").value;
 
-        // only add items that don't refer to Hacker News threads
-        if (!hnItemRegex.test(itemURL)) {
-            // add or update the url/id relationship to the cache
-            URL_CACHE[itemURL] = parseInt(itemId);
+        // skip items that link to HN itself
+        if (hnItemRegex.test(itemURL)) {
+            continue;
         }
 
-        // advance the match over the page HTML
-        match = itemRegex.exec(hnPage);
+        // get the item id, a part of the score id for subtext tds
+        var subtext = title.parentNode.nextSibling.childNodes[1];
+        var spanId = subtext.firstChild.attributes.getNamedItem("id").value;
+
+        // makes 'score_000000' into '000000' and parses the number
+        var itemNum = parseInt(spanId.replace("score_", ""));
+
+        // add the parsed item to the URL cache
+        URL_CACHE[itemURL] = itemNum;
+
+        addedCount += 1;
     }
 
-    // parse out the link to 'More' so we can continue grabbing items
-    var moreLink = "";
-    var moreMatch = moreRegex.exec(hnPage);
-    if (moreMatch != null && moreMatch.length == 2) {
-        moreLink = moreMatch[1];
-    }
+    console.log("Added " + addedCount + " items to the cache");
 
     // continue onward to download the next page, decrementing the page counter
+    var moreLink = more.firstChild.attributes.getNamedItem("href").value;
     scrapeAndUpdate(moreLink, numPages - 1);
 }
 
