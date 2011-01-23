@@ -15,7 +15,6 @@
         "default_title": "View Hacker News comments"
     },
 
-    "homepage_url": "http://jasontbradshaw.com",
     "background_page": "background.html",
     "permissions": [
         "tabs",
