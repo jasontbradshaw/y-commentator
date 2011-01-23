@@ -112,13 +112,14 @@ function scrapeAndUpdate(subdomain, numPages) {
         // makes 'score_000000' into '000000' and parses the number
         var itemNum = parseInt(spanId.replace("score_", ""));
 
-        // add the parsed item to the URL cache
-        URL_CACHE[itemURL] = itemNum;
-
-        addedCount += 1;
+        // add the parsed item to the URL cache if it's not already there
+        if (URL_CACHE[itemURL] == null) {
+            URL_CACHE[itemURL] = itemNum;
+            addedCount += 1;
+        }
     }
 
-    console.log("Added " + addedCount + " items to the cache");
+    console.log("Added " + addedCount + " new items to the cache");
 
     // continue onward to download the next page, decrementing the page counter
     var moreLink = more.firstChild.attributes.getNamedItem("href").value;
