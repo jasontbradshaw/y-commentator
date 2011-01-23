@@ -5,8 +5,8 @@ window.onload = function() {
 
     // get the item id for the currently selected tab
     var itemId = bgPage.ITEM_CACHE[bgPage.CURRENT_TAB_ID];
-    console.log("Got item id " + itemId +
-            " for tab id " + bgPage.CURRENT_TAB_ID);
+    console.log("Got item id " + itemId + " for tab id " +
+            bgPage.CURRENT_TAB_ID);
 
     // if the page had comments, update the popup
     if (itemId >= 0) {
@@ -42,7 +42,12 @@ window.onload = function() {
             link.href = link.href.replace(extensionRegex, ycBaseURL);
         }
 
-        // make the main table take up the entire width of the div
+        // eval the first script into the global context so we can vote, etc.
+        var hnScript = contentDiv.getElementsByTagName("script")[0];
+        var hnScriptSource = hnScript.innerText;
+        window.eval.call(window, hnScriptSource);
+
+        // make the main table take up (nearly) the entire width of the div
         contentDiv.getElementsByTagName("table")[0].width = "99%";
     }
     else {
