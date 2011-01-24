@@ -42,6 +42,25 @@ window.onload = function() {
             link.href = link.href.replace(extensionRegex, ycBaseURL);
         }
 
+        // replace all links within comments to have a target="_blank" line so
+        // they'll open in tabs rather than in the popup itself.
+        var spans = contentDiv.getElementsByTagName("span");
+        for (var i = 0; i < spans.length; i++) {
+            var span = spans[i];
+
+            var c = span.attributes.getNamedItem("class");
+            if (c != null && c.value == "comment") {
+                var commentLinks = span.getElementsByTagName("a");
+
+                // re-target all the links in each comment to new tabs
+                for (var j = 0; j < commentLinks.length; j++) {
+                    var a = commentLinks[j];
+
+                    a.target = "_blank";
+                }
+            }
+        }
+
         // eval the first script into the global context so we can vote, etc.
         var hnScript = contentDiv.getElementsByTagName("script")[0];
         var hnScriptSource = hnScript.innerText;
