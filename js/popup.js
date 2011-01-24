@@ -32,13 +32,13 @@ window.onload = function() {
         // should be able to replace them without much trouble.
         var links = contentDiv.getElementsByTagName("a");
         for (var i = 0; i < links.length; i++) {
-            link = links[i];
+            var link = links[i];
 
             // replace all chrome's relative re-linking with our own
             var ycBaseURL = "http://news.ycombinator.com/";
             var extensionPattern = "chrome-extension://[A-Za-z0-9_]+/";
             var extensionRegex = new RegExp(extensionPattern);
-            
+
             link.href = link.href.replace(extensionRegex, ycBaseURL);
         }
 
