@@ -36,7 +36,7 @@ window.onload = function() {
 
             // replace all chrome's relative re-linking with our own
             var ycBaseURL = "http://news.ycombinator.com/";
-            var extensionPattern = "chrome-extension://[A-Za-z0-9_]+/";
+            var extensionPattern = "chrome-extension://[a-z]+/";
             var extensionRegex = new RegExp(extensionPattern);
 
             link.href = link.href.replace(extensionRegex, ycBaseURL);
