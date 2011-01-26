@@ -27,6 +27,13 @@ window.onload = function() {
         var contentDiv = document.getElementById("content");
         contentDiv.innerHTML = req.responseText;
 
+        // used to re-link all relative links in the document
+        var ycBaseURL = "http://news.ycombinator.com/";
+
+        // expression to replace all chrome's relative re-linking with our own
+        var extensionPattern = "chrome-extension://[a-z]+/";
+        var extensionRegex = new RegExp(extensionPattern);
+
         // replace old relative links with explicit ones. the only relative
         // links appear to be those linking to 'news.ycombinator.com/', so we
         // should be able to replace them without much trouble.
@@ -34,12 +41,15 @@ window.onload = function() {
         for (var i = 0; i < links.length; i++) {
             var link = links[i];
 
-            // replace all chrome's relative re-linking with our own
-            var ycBaseURL = "http://news.ycombinator.com/";
-            var extensionPattern = "chrome-extension://[a-z]+/";
-            var extensionRegex = new RegExp(extensionPattern);
-
             link.href = link.href.replace(extensionRegex, ycBaseURL);
+        }
+
+        // replace the 'add comment' form's action with a non-relative one
+        var forms = contentDiv.getElementsByTagName("form");
+        for (var i = 0; i < forms.length; i++) {
+            var form = forms[i];
+
+            form.action = form.action.replace(extensionRegex, ycBaseURL);
         }
 
         // replace all links within comments to have a target="_blank" line so
