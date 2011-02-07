@@ -8,78 +8,78 @@ window.onload = function() {
     console.log("Got item id " + itemId + " for tab id " +
             bgPage.CURRENT_TAB_ID);
 
-    // if the page had comments, update the popup
-    if (itemId >= 0) {
-        // base URL for HN comment threads
-        var hnItemURL = "http://news.ycombinator.com/item?id=";
+    // error on invalid item id
+    if (itemId < 0) {
+        console.error("Can't load comment thread, invalid item id " + itemId);
+        return;
+    }
 
-        // download HN comments page for the item
-        var req = new XMLHttpRequest();
-        req.open("GET", hnItemURL + itemId, false);
-        req.send(null);
+    // base URL for HN comment threads
+    var hnItemURL = "http://news.ycombinator.com/item?id=";
 
-        if (req.status != 200) {
-            console.error("Failed to download '" + hnItemURL + itemId + "'");
-            return;
-        }
+    // download HN comments page for the item
+    var req = new XMLHttpRequest();
+    req.open("GET", hnItemURL + itemId, false);
+    req.send(null);
 
-        // insert the downloaded HTML content into the local content div
-        var contentDiv = document.getElementById("content");
-        contentDiv.innerHTML = req.responseText;
+    if (req.status != 200) {
+        console.error("Failed to download '" + hnItemURL + itemId + "'");
+        return;
+    }
 
-        // used to re-link all relative links in the document
-        var ycBaseURL = "http://news.ycombinator.com/";
+    // insert the downloaded HTML content into the local content div
+    var contentDiv = document.getElementById("content");
+    contentDiv.innerHTML = req.responseText;
 
-        // expression to replace all chrome's relative re-linking with our own
-        var extensionPattern = "chrome-extension://[a-z]+/";
-        var extensionRegex = new RegExp(extensionPattern);
+    // used to re-link all relative links in the document
+    var ycBaseURL = "http://news.ycombinator.com/";
 
-        // replace old relative links with explicit ones. the only relative
-        // links appear to be those linking to 'news.ycombinator.com/', so we
-        // should be able to replace them without much trouble.
-        var links = contentDiv.getElementsByTagName("a");
-        for (var i = 0; i < links.length; i++) {
-            var link = links[i];
+    // expression to replace all chrome's relative re-linking with our own
+    var extensionPattern = "chrome-extension://[a-z]+/";
+    var extensionRegex = new RegExp(extensionPattern);
 
-            link.href = link.href.replace(extensionRegex, ycBaseURL);
-        }
+    // replace old relative links with explicit ones. the only relative
+    // links appear to be those linking to 'news.ycombinator.com/', so we
+    // should be able to replace them without much trouble.
+    var links = contentDiv.getElementsByTagName("a");
+    for (var i = 0; i < links.length; i++) {
+        var link = links[i];
 
-        // replace the 'add comment' form's action with a non-relative one
-        var forms = contentDiv.getElementsByTagName("form");
-        for (var i = 0; i < forms.length; i++) {
-            var form = forms[i];
+        link.href = link.href.replace(extensionRegex, ycBaseURL);
+    }
 
-            form.action = form.action.replace(extensionRegex, ycBaseURL);
-        }
+    // replace the 'add comment' form's action with a non-relative one
+    var forms = contentDiv.getElementsByTagName("form");
+    for (var i = 0; i < forms.length; i++) {
+        var form = forms[i];
 
-        // replace all links within comments to have a target="_blank" line so
-        // they'll open in tabs rather than in the popup itself.
-        var spans = contentDiv.getElementsByTagName("span");
-        for (var i = 0; i < spans.length; i++) {
-            var span = spans[i];
+        form.action = form.action.replace(extensionRegex, ycBaseURL);
+    }
 
-            var c = span.attributes.getNamedItem("class");
-            if (c != null && c.value == "comment") {
-                var commentLinks = span.getElementsByTagName("a");
+    // replace all links within comments to have a target="_blank" line so
+    // they'll open in tabs rather than in the popup itself.
+    var spans = contentDiv.getElementsByTagName("span");
+    for (var i = 0; i < spans.length; i++) {
+        var span = spans[i];
 
-                // re-target all the links in each comment to new tabs
-                for (var j = 0; j < commentLinks.length; j++) {
-                    var a = commentLinks[j];
+        var c = span.attributes.getNamedItem("class");
+        if (c != null && c.value == "comment") {
+            var commentLinks = span.getElementsByTagName("a");
 
-                    a.target = "_blank";
-                }
+            // re-target all the links in each comment to new tabs
+            for (var j = 0; j < commentLinks.length; j++) {
+                var a = commentLinks[j];
+
+                a.target = "_blank";
             }
         }
-
-        // eval the first script into the global context so we can vote, etc.
-        var hnScript = contentDiv.getElementsByTagName("script")[0];
-        var hnScriptSource = hnScript.innerText;
-        window.eval.call(window, hnScriptSource);
-
-        // make the main table take up (nearly) the entire width of the div
-        contentDiv.getElementsByTagName("table")[0].width = "99%";
     }
-    else {
-        console.error("Can't load comment thread, invalid item id " + itemId);
-    }
+
+    // eval the first script into the global context so we can vote, etc.
+    var hnScript = contentDiv.getElementsByTagName("script")[0];
+    var hnScriptSource = hnScript.innerText;
+    window.eval.call(window, hnScriptSource);
+
+    // make the main table take up (nearly) the entire width of the div
+    contentDiv.getElementsByTagName("table")[0].width = "99%";
 }
