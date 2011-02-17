@@ -1,36 +1,20 @@
+/*jslint white: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, browser: true, devel: true, maxerr: 50, maxlen: 0, indent: 4 */
+/*global chrome: false */
+
 // used to allow the popup to access the url of the current page's HN comments
-var ITEM_CACHE = new Object();
+var ITEM_CACHE = {};
 
 // holds content scraped directly from HN to fill in where search.yc falls down.
 // contains URLs mapped to item id integers.
-var URL_CACHE = new Object();
+var URL_CACHE = {};
 
 // the id of the currently selected tab.  allows the popup to grab the
 // appropriate item id from the global item cache.
 var CURRENT_TAB_ID = -1;
 
-// scrapes HN, updating the URL cache
-var scrapeHandler = function(numNewsPages, numNewestPages) {
-    console.log("Scraping " + numNewsPages + " 'news' pages");
-    scrapeAndUpdate("/news", numNewsPages);
-
-    console.log("Scraping " + numNewestPages + " 'newest' pages");
-    scrapeAndUpdate("/newest", numNewestPages);
-
-    // count and enumerate URLs in cache
-    var cacheSize = 0;
-    for (var url in URL_CACHE) {
-        if (URL_CACHE.hasOwnProperty(url)) {
-            cacheSize += 1;
-        }
-    }
-
-    console.log("URL cache has " + cacheSize + " items");
-}
-
 // scrapes content directly from HN to fill in for lag in searchYC database.
 // updates the global object that holds the URLs in-place.
-var scrapeAndUpdate = function(subdomain, numPages) {
+var scrapeAndUpdate = function (subdomain, numPages) {
     // bottom out when we've hit our page quota
     if (numPages <= 0) {
         return;
@@ -49,7 +33,7 @@ var scrapeAndUpdate = function(subdomain, numPages) {
     console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
 
     // exit if we couldn't access the page
-    if (req.status != 200) {
+    if (req.status !== 200) {
         console.error("Failed to access '" + hnBaseURL + subdomain + "': " +
                 req.status + ", " + req.statusText);
         return;
@@ -126,9 +110,28 @@ var scrapeAndUpdate = function(subdomain, numPages) {
     scrapeAndUpdate(moreLink, numPages - 1);
 }
 
+// scrapes HN, updating the URL cache
+var scrapeHandler = function (numNewsPages, numNewestPages) {
+    console.log("Scraping " + numNewsPages + " 'news' pages");
+    scrapeAndUpdate("/news", numNewsPages);
+
+    console.log("Scraping " + numNewestPages + " 'newest' pages");
+    scrapeAndUpdate("/newest", numNewestPages);
+
+    // count and enumerate URLs in cache
+    var cacheSize = 0;
+    for (var url in URL_CACHE) {
+        if (URL_CACHE.hasOwnProperty(url)) {
+            cacheSize += 1;
+        }
+    }
+
+    console.log("URL cache has " + cacheSize + " items");
+}
+
 // searches the URL cache, then searchyc.com's archive for the current tab's
 // URL, then stores its id into a global variable accessible from the popup.
-var searchYC = function(tabId, changeInfo, tab) {
+var searchYC = function (tabId, changeInfo, tab) {
     // don't run when tab isn't loading. keeps from running twice when
     // 'loading' as well as when 'complete'.  we run when 'loading' since it
     // shows the icon almost immediately rather than having to wait for the page
@@ -201,7 +204,7 @@ var searchYC = function(tabId, changeInfo, tab) {
 
 // updates the global current tab id so the popup can access the appropriate
 // item cache entry.
-var updateCurrentTabId = function(tabId, selectInfo) {
+var updateCurrentTabId = function (tabId, selectInfo) {
     console.log("Setting global current tab id to " + tabId);
     CURRENT_TAB_ID = tabId;
 }

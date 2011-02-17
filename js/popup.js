@@ -1,5 +1,8 @@
+/*jslint white: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, browser: true, devel: true, maxerr: 50, maxlen: 0, indent: 4 */
+/*global chrome: false */
+
 // fill the popup with the comment page for the currently selected tab
-var updatePopup = function() {
+var updatePopup = function () {
     // get the background page so we can get the item id for the current page
     var bgPage = chrome.extension.getBackgroundPage();
 
@@ -22,7 +25,7 @@ var updatePopup = function() {
     req.open("GET", hnItemURL + itemId, false);
     req.send(null);
 
-    if (req.status != 200) {
+    if (req.status !== 200) {
         console.error("Failed to download '" + hnItemURL + itemId + "'");
         return;
     }
