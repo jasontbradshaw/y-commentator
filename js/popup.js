@@ -1,5 +1,5 @@
-// runs after load so we ensure that we've got all the appropriate DOM elements
-window.onload = function() {
+// fill the popup with the comment page for the currently selected tab
+var updatePopup = function() {
     // get the background page so we can get the item id for the current page
     var bgPage = chrome.extension.getBackgroundPage();
 
@@ -83,3 +83,6 @@ window.onload = function() {
     // make the main table take up (nearly) the entire width of the div
     contentDiv.getElementsByTagName("table")[0].width = "99%";
 }
+
+// run after load so we ensure that we've got all the appropriate DOM elements
+window.onload = updatePopup;
