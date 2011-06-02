@@ -90,17 +90,23 @@ var scrapeAndUpdate = function (subdomain, numPages) {
             continue;
         }
 
-        // get the item id, a part of the score id for subtext tds
+        // get the subtext of the title, which contains the item id
         var subtext = title.parentNode.nextSibling.childNodes[1];
-        var spanId = subtext.firstChild.attributes.getNamedItem("id").value;
 
-        // makes 'score_000000' into '000000' and parses the number
-        var itemNum = parseInt(spanId.replace("score_", ""));
+        // certain posts don't have a standard subtext and only contain short
+        // subtext spans, so we skip those.
+        if (subtext.firstChild.attributes != null) {
+            // get the item id, a part of the score id for subtext tds
+            var spanId = subtext.firstChild.attributes.getNamedItem("id").value;
 
-        // add the parsed item to the URL cache if it's not already there
-        if (URL_CACHE[itemURL] == null) {
-            URL_CACHE[itemURL] = itemNum;
-            addedCount += 1;
+            // makes 'score_000000' into '000000' and parses the number
+            var itemNum = parseInt(spanId.replace("score_", ""));
+
+            // add the parsed item to the URL cache if it's not already there
+            if (URL_CACHE[itemURL] == null) {
+                URL_CACHE[itemURL] = itemNum;
+                addedCount += 1;
+            }
         }
     }
 
