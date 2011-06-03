@@ -1,17 +1,9 @@
 // holds all state for the extension
 var __YC_STATE = {
-    // used to allow the popup to access the url of the current page's HN
-    // comments.
-    "items": {},
-
     // holds content scraped directly from HN to fill in where HNSearch falls
     // down. contains URLs mapped to item id integers. also used to cache items
     // once they've been looked up via the external API.
     "urls": {},
-
-    // the id of the currently selected tab.  allows the popup to grab the
-    // appropriate item id from the global item cache.
-    "current_tab_id": -1
 }
 
 // scrapes content directly from HN to fill in for lag in HNSearch database.
@@ -139,7 +131,7 @@ var scrapeHandler = function (numNewsPages, numNewestPages) {
 
 // searches the URL cache, then hnsearch.com's archive for the current tab's
 // URL, then stores its id into a global variable accessible from the popup.
-var search = function (tabId, changeInfo, tab) {
+var apiSearch = function (tabId, changeInfo, tab) {
     // don't run when tab isn't loading. keeps from running twice when
     // 'loading' as well as when 'complete'.  we run when 'loading' since it
     // shows the icon almost immediately rather than having to wait for the page
@@ -197,10 +189,6 @@ var search = function (tabId, changeInfo, tab) {
 
     // show the page action if the local item id was set
     if (newItemId > -1) {
-        // cache the global item id so the popup can access it
-        console.log("Caching item id " + newItemId + " for tab id " + tab.id);
-        __YC_STATE.items[tab.id] = newItemId;
-
         console.log("Showing page action icon");
         chrome.pageAction.show(tabId);
     }
@@ -211,20 +199,33 @@ var search = function (tabId, changeInfo, tab) {
     }
 }
 
-// updates the global current tab id so the popup can access the appropriate
-// item cache entry.
-var updateCurrentTabId = function (tabId, selectInfo) {
-    console.log("Setting global current tab id to " + tabId);
-    __YC_STATE.current_tab_id = tabId;
+// open a tab containing the comments for the current tab's URL
+var openComments = function (tab) {
+    // get the item id for the currently selected tab
+    var itemId = __YC_STATE.urls[tab.url];
+
+    // error on invalid item id
+    if (itemId >= 0) {
+        // open a new tab with the comments page as the url
+        var newTab = {
+            "url": "http://news.ycombinator.com/item?id=" + itemId,
+            "index": tab.index + 1 // open next to current tab
+        }
+
+        chrome.tabs.create(newTab);
+
+        // TODO: allow opening of comments in a new window
+        //window.open(newTab.url, "Hacker News Comments", "width=800,height=400");
+    }
 }
+
+// listen for page action clicks so we can open comment tabs
+console.log("Setting page action click listener");
+chrome.pageAction.onClicked.addListener(openComments);
 
 // listen for changes to any tab so we can check for HN content for its URL
 console.log("Setting tab update event listener");
-chrome.tabs.onUpdated.addListener(search);
-
-// listen tor tab selection changes so we can update the current global tab id
-console.log("Setting tab selection change event listener");
-chrome.tabs.onSelectionChanged.addListener(updateCurrentTabId);
+chrome.tabs.onUpdated.addListener(apiSearch);
 
 // scrape for content periodically
 var scrapeInterval = 180000; // 3 minutes
