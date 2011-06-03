@@ -1,17 +1,21 @@
 /*jslint white: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, browser: true, devel: true, maxerr: 50, maxlen: 0, indent: 4 */
 /*global chrome: false */
 
-// used to allow the popup to access the url of the current page's HN comments
-var ITEM_CACHE = {};
+// holds all state for the extension
+var __YC_STATE = {
+    // used to allow the popup to access the url of the current page's HN
+    // comments.
+    "items": {},
 
-// holds content scraped directly from HN to fill in where HNSearch falls down.
-// contains URLs mapped to item id integers. also used to cache items once
-// they've been looked up via the external API.
-var URL_CACHE = {};
+    // holds content scraped directly from HN to fill in where HNSearch falls
+    // down. contains URLs mapped to item id integers. also used to cache items
+    // once they've been looked up via the external API.
+    "urls": {},
 
-// the id of the currently selected tab.  allows the popup to grab the
-// appropriate item id from the global item cache.
-var CURRENT_TAB_ID = -1;
+    // the id of the currently selected tab.  allows the popup to grab the
+    // appropriate item id from the global item cache.
+    "current_tab_id": -1
+}
 
 // scrapes content directly from HN to fill in for lag in HNSearch database.
 // updates the global object that holds the URLs in-place.
@@ -103,8 +107,8 @@ var scrapeAndUpdate = function (subdomain, numPages) {
             var itemNum = parseInt(spanId.replace("score_", ""));
 
             // add the parsed item to the URL cache if it's not already there
-            if (URL_CACHE[itemURL] == null) {
-                URL_CACHE[itemURL] = itemNum;
+            if (__YC_STATE.urls[itemURL] == null) {
+                __YC_STATE.urls[itemURL] = itemNum;
                 addedCount += 1;
             }
         }
@@ -127,8 +131,8 @@ var scrapeHandler = function (numNewsPages, numNewestPages) {
 
     // count URLs in cache
     var cacheSize = 0;
-    for (var url in URL_CACHE) {
-        if (URL_CACHE.hasOwnProperty(url)) {
+    for (var url in __YC_STATE.urls) {
+        if (__YC_STATE.urls.hasOwnProperty(url)) {
             cacheSize += 1;
         }
     }
@@ -151,8 +155,8 @@ var search = function (tabId, changeInfo, tab) {
     var newItemId = -1;
 
     // check the cache for the URL before hitting HNSearch
-    if (URL_CACHE[tab.url] != null) {
-        newItemId = URL_CACHE[tab.url];
+    if (__YC_STATE.urls[tab.url] != null) {
+        newItemId = __YC_STATE.urls[tab.url];
         console.log("Found '" + tab.url + "' in cache, item id " + newItemId);
     }
 
@@ -190,7 +194,7 @@ var search = function (tabId, changeInfo, tab) {
 
             // add the new URL to the global cache
             console.log("Adding HNSearch response data to global URL cache");
-            URL_CACHE[tab.url] = newItemId;
+            __YC_STATE.urls[tab.url] = newItemId;
         }
     }
 
@@ -198,7 +202,7 @@ var search = function (tabId, changeInfo, tab) {
     if (newItemId > -1) {
         // cache the global item id so the popup can access it
         console.log("Caching item id " + newItemId + " for tab id " + tab.id);
-        ITEM_CACHE[tab.id] = newItemId;
+        __YC_STATE.items[tab.id] = newItemId;
 
         console.log("Showing page action icon");
         chrome.pageAction.show(tabId);
@@ -214,7 +218,7 @@ var search = function (tabId, changeInfo, tab) {
 // item cache entry.
 var updateCurrentTabId = function (tabId, selectInfo) {
     console.log("Setting global current tab id to " + tabId);
-    CURRENT_TAB_ID = tabId;
+    __YC_STATE.current_tab_id = tabId;
 }
 
 // listen for changes to any tab so we can check for HN content for its URL

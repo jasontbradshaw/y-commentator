@@ -7,9 +7,9 @@ var updatePopup = function () {
     var bgPage = chrome.extension.getBackgroundPage();
 
     // get the item id for the currently selected tab
-    var itemId = bgPage.ITEM_CACHE[bgPage.CURRENT_TAB_ID];
+    var itemId = bgPage.__YC_STATE.items[bgPage.__YC_STATE.current_tab_id];
     console.log("Got item id " + itemId + " for tab id " +
-            bgPage.CURRENT_TAB_ID);
+            bgPage.__YC_STATE.current_tab_id);
 
     // error on invalid item id
     if (itemId < 0) {
