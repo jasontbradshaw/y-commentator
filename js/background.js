@@ -1,6 +1,3 @@
-/*jslint white: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, browser: true, devel: true, maxerr: 50, maxlen: 0, indent: 4 */
-/*global chrome: false */
-
 // holds all state for the extension
 var __YC_STATE = {
     // used to allow the popup to access the url of the current page's HN

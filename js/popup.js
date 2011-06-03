@@ -1,6 +1,3 @@
-/*jslint white: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, browser: true, devel: true, maxerr: 50, maxlen: 0, indent: 4 */
-/*global chrome: false */
-
 // fill the popup with the comment page for the currently selected tab
 var updatePopup = function () {
     // get the background page so we can get the item id for the current page
