@@ -22,7 +22,13 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     // download the requested page syncronously
     var req = new XMLHttpRequest();
     req.open("GET", hnBaseURL + subdomain, false);
-    req.send(null);
+    try {
+        req.send(null);
+    }
+    catch (error) {
+        console.error("Scrape failed with error:\n\t" + error);
+        return;
+    }
 
     console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
 
@@ -159,8 +165,14 @@ var apiSearch = function (tabId, changeInfo, tab) {
 
         // issue a synchronous request for the page data
         var req = new XMLHttpRequest();
-        req.open("GET", searchURL + tab.url, false);
-        req.send(null);
+        req.open("GET", searchURL + url, false);
+        try {
+            req.send(null);
+        }
+        catch (error) {
+            console.error("API search failed with error:\n\t" + error);
+            return;
+        }
 
         // exit if we couldn't access the HNSearch server
         if (req.status != 200) {
