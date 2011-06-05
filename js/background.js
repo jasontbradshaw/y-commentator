@@ -4,6 +4,12 @@ var __YC_STATE = {
     // down. contains URLs mapped to item id integers. also used to cache items
     // once they've been looked up via the external API.
     "urls": {},
+
+    // items we never want to look up in the api, namely chrome-specific pages.
+    // stored as a list of regexp objects for quick matching.
+    "filters": [
+        RegExp("^chrome://.*$")
+    ]
 }
 
 // scrapes content directly from HN to fill in for lag in HNSearch database.
@@ -197,6 +203,17 @@ var searchHandler = function (tabId, changeInfo, tab) {
     // well as when 'complete'. we run when 'loading' since it shows the icon
     // almost immediately rather than having to wait for the page to load first.
     if (changeInfo.status == "loading") {
+        // filter out certain urls
+        for (var i = 0; i < __YC_STATE.filters.length; i++) {
+            var pattern = __YC_STATE.filters[i];
+            // skip tabs that match against any of the filters
+            if (pattern.test(tab.url)) {
+                console.log("Tab URL " + tab.url + " matched against filter '" +
+                        pattern.source + "', ignoring.");
+                return;
+            }
+        }
+
         // do the actual search
         newItemId = apiSearch(tab.url);
 
