@@ -27,7 +27,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
 
     // download the requested page syncronously
     var req = new XMLHttpRequest();
-    req.open("GET", hnBaseURL + subdomain, false);
+    req.open("GET", hnBaseURL + subdomain, false); // TODO: make requests async
     try {
         req.send(null);
     }
@@ -163,7 +163,7 @@ var apiSearch = function (url) {
 
         // issue a synchronous request for the page data
         var req = new XMLHttpRequest();
-        req.open("GET", searchURL + url, false);
+        req.open("GET", searchURL + url, false); // TODO: make requests async
         try {
             req.send(null);
         }
