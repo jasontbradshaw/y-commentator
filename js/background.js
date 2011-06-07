@@ -28,6 +28,96 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     // download the requested page syncronously
     var req = new XMLHttpRequest();
     req.open("GET", hnBaseURL + subdomain, false); // TODO: make requests async
+
+    req.onreadystatechange = function (aEvt) {
+        console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
+
+        // exit if we couldn't access the page
+        if (req.status !== 200) {
+            console.error("Failed to access '" + hnBaseURL + subdomain + "': " +
+                    req.status + ", " + req.statusText);
+            return;
+        }
+
+        // render the HTML to a DOM element so we can navigate the heirarchy
+        var hnPage = document.createElement("div");
+        hnPage.innerHTML = req.responseText;
+
+        // find all the item titles
+        var tds = hnPage.getElementsByTagName("td");
+
+        console.log("Searching " + tds.length +
+                " td elements for matching titles");
+
+        var titles = [];
+        for (var i = 0; i < tds.length; i++) {
+            var td = tds[i];
+
+            // match titles with only 'class' attributes, nothing else
+            var c = td.attributes.getNamedItem("class");
+            if (c != null && c.value == "title" && td.attributes.length == 1) {
+                titles.push(td);
+            }
+        }
+
+        console.log("Found " + titles.length + " title items");
+
+        // make sure we matched the expected number of total titles
+        var expectedItems = 31;
+        if (titles.length != expectedItems) {
+            console.warning("Found " + titles.length + " items, expecting " +
+                    expectedItems);
+        }
+
+        // remove and save the final title, the only 'More' link
+        var more = titles.pop();
+
+        // we'll use this regex to ignore items that link directly to HN comments
+        var hnItemPattern = "item[?]id=[0-9]+";
+        var hnItemRegex = new RegExp(hnItemPattern);
+
+        // add all the title and their matching subtexts to the global item cache
+        var addedCount = 0;
+        for (var i = 0; i < titles.length; i++) {
+            var title = titles[i];
+
+            // get the first link's URL, the first child of the title td
+            var a = title.firstChild;
+            var itemURL = a.attributes.getNamedItem("href").value;
+
+            // skip items that link to HN itself
+            if (hnItemRegex.test(itemURL)) {
+                continue;
+            }
+
+            // get the subtext of the title, which contains the item id
+            var subtext = title.parentNode.nextSibling.childNodes[1];
+
+            // certain posts don't have a standard subtext and only contain
+            // short subtext spans, so we skip those.
+            if (subtext.firstChild.attributes != null) {
+                // get the item id, a part of the score id for subtext tds
+                var spanId =
+                    subtext.firstChild.attributes.getNamedItem("id").value;
+
+                // makes 'score_000000' into '000000' and parses the number
+                var itemNum = parseInt(spanId.replace("score_", ""));
+
+                // add the parsed item to the URL cache if it's not already there
+                if (__YC_STATE.urls[itemURL] == null) {
+                    __YC_STATE.urls[itemURL] = itemNum;
+                    addedCount += 1;
+                }
+            }
+        }
+
+        console.log("Added " + addedCount + " new items to the cache");
+
+        // continue on to download the next page, decrementing the page counter
+        var moreLink = more.firstChild.attributes.getNamedItem("href").value;
+        scrapeAndUpdate(moreLink, numPages - 1);
+    };
+
     try {
         req.send(null);
     }
@@ -35,91 +125,6 @@ var scrapeAndUpdate = function (subdomain, numPages) {
         console.error("Scrape failed with error:\n\t" + error);
         return;
     }
-
-    console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
-
-    // exit if we couldn't access the page
-    if (req.status !== 200) {
-        console.error("Failed to access '" + hnBaseURL + subdomain + "': " +
-                req.status + ", " + req.statusText);
-        return;
-    }
-
-    // render the HTML to a DOM element so we can navigate the heirarchy
-    var hnPage = document.createElement("div");
-    hnPage.innerHTML = req.responseText;
-
-    // find all the item titles
-    var tds = hnPage.getElementsByTagName("td");
-
-    console.log("Searching " + tds.length + " td elements for matching titles");
-
-    var titles = [];
-    for (var i = 0; i < tds.length; i++) {
-        var td = tds[i];
-
-        // match titles with only 'class' attributes, nothing else
-        var c = td.attributes.getNamedItem("class");
-        if (c != null && c.value == "title" && td.attributes.length == 1) {
-            titles.push(td);
-        }
-    }
-
-    console.log("Found " + titles.length + " title items");
-
-    // make sure we matched the expected number of total titles
-    var expectedItems = 31;
-    if (titles.length != expectedItems) {
-        console.warning("Found " + titles.length + " items, expecting " +
-                expectedItems);
-    }
-
-    // remove and save the final title, the only 'More' link
-    var more = titles.pop();
-
-    // we'll use this regex to ignore items that link directly to HN comments
-    var hnItemPattern = "item[?]id=[0-9]+";
-    var hnItemRegex = new RegExp(hnItemPattern);
-
-    // add all the title and their matching subtexts to the global item cache
-    var addedCount = 0;
-    for (var i = 0; i < titles.length; i++) {
-        var title = titles[i];
-
-        // get the first link's URL, the first child of the title td
-        var a = title.firstChild;
-        var itemURL = a.attributes.getNamedItem("href").value;
-
-        // skip items that link to HN itself
-        if (hnItemRegex.test(itemURL)) {
-            continue;
-        }
-
-        // get the subtext of the title, which contains the item id
-        var subtext = title.parentNode.nextSibling.childNodes[1];
-
-        // certain posts don't have a standard subtext and only contain short
-        // subtext spans, so we skip those.
-        if (subtext.firstChild.attributes != null) {
-            // get the item id, a part of the score id for subtext tds
-            var spanId = subtext.firstChild.attributes.getNamedItem("id").value;
-
-            // makes 'score_000000' into '000000' and parses the number
-            var itemNum = parseInt(spanId.replace("score_", ""));
-
-            // add the parsed item to the URL cache if it's not already there
-            if (__YC_STATE.urls[itemURL] == null) {
-                __YC_STATE.urls[itemURL] = itemNum;
-                addedCount += 1;
-            }
-        }
-    }
-
-    console.log("Added " + addedCount + " new items to the cache");
-
-    // continue onward to download the next page, decrementing the page counter
-    var moreLink = more.firstChild.attributes.getNamedItem("href").value;
-    scrapeAndUpdate(moreLink, numPages - 1);
 }
 
 // scrapes HN, updating the URL cache
