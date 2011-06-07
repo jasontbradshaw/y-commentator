@@ -8,7 +8,9 @@ var __YC_STATE = {
     // items we never want to look up in the api, namely chrome-specific pages.
     // stored as a list of regexp objects for quick matching.
     "filters": [
-        RegExp("^chrome://.*$")
+        RegExp("^chrome://.*$"), // chrome pages, like new tabs or history
+        RegExp("^http://news\.ycombinator\.com/[a-z]+[?].*$"), // special HN pages
+        RegExp("^http://www\.google\.com/search\?.*$") // Google search pages
     ]
 }
 
