@@ -152,15 +152,18 @@ var scrapeHandler = function (numNewsPages, numNewestPages) {
 }
 
 // searches the URL cache, then hnsearch.com's archive for the current tab's
-// URL, then returns the results if there were any, otherwise null.
-var apiSearch = function (url) {
-    // we return an appropriate resulting item id if we find one, otherwise null
-    var resultId = null;
-
+// URL, then updates the page action and URL cache if necessary.
+var searchAndUpdate = function (tab) {
     // check the cache for the URL before hitting the external server
-    if (__YC_STATE.urls[url] != null) {
-        resultId = __YC_STATE.urls[url];
-        console.log("Found '" + url + "' in cache, item id " + resultId);
+    if (__YC_STATE.urls[tab.url] != null) {
+        console.log("Found '" + tab.url + "' in cache, item id " +
+                __YC_STATE.urls[tab.url]);
+
+        // show the page action for the given tab id
+        console.log("Showing page action icon");
+        chrome.pageAction.show(tab.id);
+
+        return;
     }
 
     // ask the remote server for the URL
@@ -169,11 +172,60 @@ var apiSearch = function (url) {
         // sorts putting newest items first, and limits results to one item.
         var searchURL = "http://api.thriftdb.com/api.hnsearch.com/items/_search?sortby=create_ts desc&limit=1&filter[fields][url][]=";
 
-        console.log(url + " not in cache, requesting data");
+        console.log(tab.url + " not in cache, requesting data");
 
-        // issue a synchronous request for the page data
+        // issue an asynchronous request for the page data
         var req = new XMLHttpRequest();
-        req.open("GET", searchURL + url, false); // TODO: make requests async
+        req.open("GET", searchURL + tab.url, true);
+
+        req.onreadystatechange = function (aEvt) {
+            // give up if request hasn't finished loading yet
+            if (req.readyState != 4) {
+                return;
+            }
+
+            // exit if we couldn't access the HNSearch server
+            if (req.status != 200) {
+                console.error("Could not access HNSearch: " + req.status +
+                        ", " + req.statusText);
+                return;
+            }
+
+            // parse results
+            var results = JSON.parse(req.responseText);
+            console.log("Parsed response JSON, got " + results["hits"] +
+                    " results");
+
+            // set the result item id if there was a result, otherwise null
+            var resultId = null;
+            if (results["hits"] > 0) {
+                // get the result id from the response, which is only one item
+                item = results["results"][0]["item"];
+
+                // return the found item id
+                resultId = item["id"];
+            }
+
+            // show the page action and update the cache if we received a valid
+            // item id.
+            if (resultId != null) {
+                // add the new URL to the global cache if need be
+                if (__YC_STATE.urls[tab.url] == undefined) {
+                    console.log("Adding " + tab.url + " to cache with item id " +
+                            resultId);
+                    __YC_STATE.urls[tab.url] = resultId;
+                }
+
+                console.log("Showing page action icon");
+                chrome.pageAction.show(tab.id);
+            }
+            // hide the action icon otherwise
+            else {
+                console.log("Hiding page action icon");
+                chrome.pageAction.hide(tab.id);
+            }
+        };
+
         try {
             req.send(null);
         }
@@ -181,30 +233,7 @@ var apiSearch = function (url) {
             console.error("API search failed with error:\n\t" + error);
             return;
         }
-
-        // exit if we couldn't access the HNSearch server
-        if (req.status != 200) {
-            console.error("Could not access HNSearch: " + req.status + ", " +
-                    req.statusText);
-            return null;
-        }
-
-        // parse results
-        var results = JSON.parse(req.responseText);
-        console.log("Parsed response JSON, got " + results["hits"] + " results");
-
-        // set the result item id if there was a result, otherwise null
-        var resultId = null;
-        if (results["hits"] > 0) {
-            // get the result id from the response, which is only one item long
-            item = results["results"][0]["item"];
-
-            // return the found item id
-            resultId = item["id"];
-        }
     }
-
-    return resultId;
 }
 
 // the handler for doing an api search on tab load
@@ -224,26 +253,7 @@ var searchHandler = function (tabId, changeInfo, tab) {
             }
         }
 
-        // do the actual search
-        newItemId = apiSearch(tab.url);
-
-        // show the page action and update the cache if we received a valid item id
-        if (newItemId != null) {
-            // add the new URL to the global cache if need be
-            if (__YC_STATE.urls[tab.url] == undefined) {
-                console.log("Adding " + tab.url + " to cache with item id " +
-                        newItemId);
-                __YC_STATE.urls[tab.url] = newItemId;
-            }
-
-            console.log("Showing page action icon");
-            chrome.pageAction.show(tabId);
-        }
-        // hide the action icon otherwise
-        else {
-            console.log("Hiding page action icon");
-            chrome.pageAction.hide(tabId);
-        }
+        searchAndUpdate(tab);
     }
 }
 
