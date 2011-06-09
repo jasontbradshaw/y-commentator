@@ -19,6 +19,16 @@ var __YC_STATE = {
 var scrapeAndUpdate = function (subdomain, numPages) {
     // bottom out when we've hit our page quota
     if (numPages <= 0) {
+        // count URLs in cache and log before returning
+        var cacheSize = 0;
+        for (var url in __YC_STATE.urls) {
+            if (__YC_STATE.urls.hasOwnProperty(url)) {
+                cacheSize += 1;
+            }
+        }
+
+        console.log("URL cache has " + cacheSize + " items");
+
         return;
     }
 
@@ -139,16 +149,6 @@ var scrapeHandler = function (numNewsPages, numNewestPages) {
 
     console.log("Scraping " + numNewestPages + " 'newest' pages");
     scrapeAndUpdate("/newest", numNewestPages);
-
-    // count URLs in cache
-    var cacheSize = 0;
-    for (var url in __YC_STATE.urls) {
-        if (__YC_STATE.urls.hasOwnProperty(url)) {
-            cacheSize += 1;
-        }
-    }
-
-    console.log("URL cache has " + cacheSize + " items");
 }
 
 // searches the URL cache, then hnsearch.com's archive for the current tab's
