@@ -22,16 +22,19 @@ var scrapeAndUpdate = function (subdomain, numPages) {
         return;
     }
 
-    // TODO: don't scrape if the cache is really large, log that fact
-
     // the base URL for Hacker News, which we append the given subdomain to
     var hnBaseURL = "http://news.ycombinator.com";
 
     // download the requested page syncronously
     var req = new XMLHttpRequest();
-    req.open("GET", hnBaseURL + subdomain, false); // TODO: make requests async
+    req.open("GET", hnBaseURL + subdomain, true);
 
     req.onreadystatechange = function (aEvt) {
+        // give up if we're not done downloading the request yet
+        if (req.readyState != 4) {
+            return;
+        }
+
         console.log("Scraping URL '" + hnBaseURL + subdomain + "'");
 
         // exit if we couldn't access the page
