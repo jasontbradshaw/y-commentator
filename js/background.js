@@ -35,7 +35,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     // the base URL for Hacker News, which we append the given subdomain to
     var hnBaseURL = "http://news.ycombinator.com";
 
-    // download the requested page syncronously
+    // download the requested page asyncronously
     var req = new XMLHttpRequest();
     req.open("GET", hnBaseURL + subdomain, true);
 
