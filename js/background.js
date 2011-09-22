@@ -286,7 +286,7 @@ console.log("Setting tab update event listener");
 chrome.tabs.onUpdated.addListener(searchHandler);
 
 // scrape for content periodically
-var scrapeInterval = 420000; // 7 minutes
+var scrapeInterval = 1000 * 60 * 7;
 console.log("Setting scrape interval to " + scrapeInterval + " ms");
 setInterval("scrapeHandler(" + 1 + ", " + 3 + ")", scrapeInterval);
 
