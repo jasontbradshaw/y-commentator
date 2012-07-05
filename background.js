@@ -1,18 +1,17 @@
-// holds all state for the extension
-var __YC_STATE = {
-    // holds content scraped directly from HN to fill in where HNSearch falls
-    // down. contains URLs mapped to item id integers. also used to cache items
-    // once they've been looked up via the external API.
-    "urls": {},
+(function () {
 
-    // items we never want to look up in the api, namely chrome-specific pages.
-    // stored as a list of regexp objects for quick matching.
-    "filters": [
-        RegExp("^chrome://.*$"), // chrome pages, like new tabs or history
-        RegExp("^http://news\.ycombinator\.com/[a-z]+[?].*$"), // special HN pages
-        RegExp("^http://www\.google\.com/search\?.*$") // Google search pages
-    ]
-}
+// holds content scraped directly from HN to fill in where HNSearch falls
+// down. contains URLs mapped to item id integers. also used to cache items
+// once they've been looked up via the external API.
+var URL_CACHE = {};
+
+// items we never want to look up in the api, namely chrome-specific pages.
+// stored as a list of regexp objects for quick matching.
+var FILTERS = [
+    RegExp("^chrome[a-zA-Z0-9_\-]+://.*$"), // built-in chrome pages
+    RegExp("^http://news\.ycombinator\.com/[a-z]+[?].*$"), // special HN pages
+    RegExp("^http://www\.google\.com/search\?.*$") // google search pages
+];
 
 // scrapes content directly from HN to fill in for lag in HNSearch database.
 // updates the global object that holds the URLs in-place.
@@ -21,8 +20,8 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     if (numPages <= 0) {
         // count URLs in cache and log before returning
         var cacheSize = 0;
-        for (var url in __YC_STATE.urls) {
-            if (__YC_STATE.urls.hasOwnProperty(url)) {
+        for (var url in URL_CACHE) {
+            if (URL_CACHE.hasOwnProperty(url)) {
                 cacheSize += 1;
             }
         }
@@ -33,7 +32,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     }
 
     // the base URL for Hacker News, which we append the given subdomain to
-    var hnBaseURL = "http://news.ycombinator.com";
+    var hnBaseURL = "http://news.ycombinator.com/";
 
     // download the requested page asyncronously
     var req = new XMLHttpRequest();
@@ -80,7 +79,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
         // make sure we matched the expected number of total titles
         var expectedItems = 31;
         if (titles.length != expectedItems) {
-            console.warning("Found " + titles.length + " items, expecting " +
+            console.error("Found " + titles.length + " items, expecting " +
                     expectedItems);
         }
 
@@ -119,8 +118,8 @@ var scrapeAndUpdate = function (subdomain, numPages) {
                 var itemNum = parseInt(spanId.replace("score_", ""));
 
                 // add the parsed item to the URL cache if it's not already there
-                if (__YC_STATE.urls[itemURL] == null) {
-                    __YC_STATE.urls[itemURL] = itemNum;
+                if (URL_CACHE[itemURL] == null) {
+                    URL_CACHE[itemURL] = itemNum;
                     addedCount += 1;
                 }
             }
@@ -129,8 +128,10 @@ var scrapeAndUpdate = function (subdomain, numPages) {
         console.log("Added " + addedCount + " new items to the cache");
 
         // continue on to download the next page, decrementing the page counter
-        var moreLink = more.firstChild.attributes.getNamedItem("href").value;
-        scrapeAndUpdate(moreLink, numPages - 1);
+        if (typeof more !== "undefined") {
+            var moreLink = more.firstChild.attributes.getNamedItem("href").value;
+            scrapeAndUpdate(moreLink, numPages - 1);
+        }
     };
 
     try {
@@ -145,19 +146,19 @@ var scrapeAndUpdate = function (subdomain, numPages) {
 // scrapes HN, updating the URL cache
 var scrapeHandler = function (numNewsPages, numNewestPages) {
     console.log("Scraping " + numNewsPages + " 'news' pages");
-    scrapeAndUpdate("/news", numNewsPages);
+    scrapeAndUpdate("news", numNewsPages);
 
     console.log("Scraping " + numNewestPages + " 'newest' pages");
-    scrapeAndUpdate("/newest", numNewestPages);
+    scrapeAndUpdate("newest", numNewestPages);
 }
 
 // searches the URL cache, then hnsearch.com's archive for the current tab's
 // URL, then updates the page action and URL cache if necessary.
 var searchAndUpdate = function (tab) {
     // check the cache for the URL before hitting the external server
-    if (__YC_STATE.urls[tab.url] != null) {
+    if (URL_CACHE[tab.url] != null) {
         console.log("Found '" + tab.url + "' in cache, item id " +
-                __YC_STATE.urls[tab.url]);
+                URL_CACHE[tab.url]);
 
         // show the page action for the given tab id
         console.log("Showing page action icon");
@@ -210,10 +211,10 @@ var searchAndUpdate = function (tab) {
             // item id.
             if (resultId != null) {
                 // add the new URL to the global cache if need be
-                if (__YC_STATE.urls[tab.url] == undefined) {
+                if (URL_CACHE[tab.url] == undefined) {
                     console.log("Adding " + tab.url + " to cache with item id " +
                             resultId);
-                    __YC_STATE.urls[tab.url] = resultId;
+                    URL_CACHE[tab.url] = resultId;
                 }
 
                 console.log("Showing page action icon");
@@ -243,8 +244,8 @@ var searchHandler = function (tabId, changeInfo, tab) {
     // almost immediately rather than having to wait for the page to load first.
     if (changeInfo.status == "loading") {
         // filter out certain urls
-        for (var i = 0; i < __YC_STATE.filters.length; i++) {
-            var pattern = __YC_STATE.filters[i];
+        for (var i = 0; i < FILTERS.length; i++) {
+            var pattern = FILTERS[i];
             // skip tabs that match against any of the filters
             if (pattern.test(tab.url)) {
                 console.log("Tab URL " + tab.url + " matched against filter '" +
@@ -260,7 +261,7 @@ var searchHandler = function (tabId, changeInfo, tab) {
 // open a tab containing the comments for the current tab's URL
 var openComments = function (tab) {
     // get the item id for the currently selected tab
-    var itemId = __YC_STATE.urls[tab.url];
+    var itemId = URL_CACHE[tab.url];
 
     // error on invalid item id
     if (itemId >= 0) {
@@ -277,6 +278,7 @@ var openComments = function (tab) {
     }
 }
 
+// TODO: occasionally, chrome.pageAction is undefined -- find out why
 // listen for page action clicks so we can open comment tabs
 console.log("Setting page action click listener");
 chrome.pageAction.onClicked.addListener(openComments);
@@ -288,8 +290,12 @@ chrome.tabs.onUpdated.addListener(searchHandler);
 // scrape for content periodically
 var scrapeInterval = 1000 * 60 * 7;
 console.log("Setting scrape interval to " + scrapeInterval + " ms");
-setInterval("scrapeHandler(" + 1 + ", " + 3 + ")", scrapeInterval);
+setInterval(function () {
+   scrapeHandler(1, 3);
+}, scrapeInterval);
 
 // do an initial scrape, deeper than the periodic one
 console.log("Doing initial content scrape");
 scrapeHandler(2, 5);
+
+})();
