@@ -1,4 +1,4 @@
-(function () {
+/* globals chrome:false */
 
 // holds content scraped directly from HN to fill in where HNSearch falls
 // down. contains URLs mapped to item id integers. also used to cache items
@@ -8,9 +8,9 @@ var URL_CACHE = {};
 // items we never want to look up in the api, namely chrome-specific pages.
 // stored as a list of regexp objects for quick matching.
 var FILTERS = [
-    RegExp("^chrome[a-zA-Z0-9_\-]+://.*$"), // built-in chrome pages
-    RegExp("^http://news\.ycombinator\.com/[a-z]+[?].*$"), // special HN pages
-    RegExp("^http://www\.google\.com/search\?.*$") // google search pages
+    /^chrome[a-zA-Z0-9_\-]+:\/\/.*$/, // built-in chrome pages
+    /^http:\/\/news\.ycombinator\.com\/[a-z]+[?].*$/, // special HN pages
+    /^http:\/\/www\.google\.com\/search\/?.*$/ // google search pages
 ];
 
 // scrapes content directly from HN to fill in for lag in HNSearch database.
@@ -38,9 +38,9 @@ var scrapeAndUpdate = function (subdomain, numPages) {
     var req = new XMLHttpRequest();
     req.open("GET", hnBaseURL + subdomain, true);
 
-    req.onreadystatechange = function (aEvt) {
+    req.onreadystatechange = function () {
         // give up if we're not done downloading the request yet
-        if (req.readyState != 4) {
+        if (req.readyState !== 4) {
             return;
         }
 
@@ -63,13 +63,13 @@ var scrapeAndUpdate = function (subdomain, numPages) {
         console.log("Searching " + tds.length +
                 " td elements for matching titles");
 
-        var titles = [];
-        for (var i = 0; i < tds.length; i++) {
+        var i, titles = [];
+        for (i = 0; i < tds.length; i++) {
             var td = tds[i];
 
             // match titles with only 'class' attributes, nothing else
             var c = td.attributes.getNamedItem("class");
-            if (c != null && c.value == "title" && td.attributes.length == 1) {
+            if (c != null && c.value === "title" && td.attributes.length === 1) {
                 titles.push(td);
             }
         }
@@ -78,7 +78,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
 
         // make sure we matched the expected number of total titles
         var expectedItems = 31;
-        if (titles.length != expectedItems) {
+        if (titles.length !== expectedItems) {
             console.error("Found " + titles.length + " items, expecting " +
                     expectedItems);
         }
@@ -92,7 +92,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
 
         // add all the title and their matching subtexts to the global item cache
         var addedCount = 0;
-        for (var i = 0; i < titles.length; i++) {
+        for (i = 0; i < titles.length; i++) {
             var title = titles[i];
 
             // get the first link's URL, the first child of the title td
@@ -100,9 +100,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
             var itemURL = a.attributes.getNamedItem("href").value;
 
             // skip items that link to HN itself
-            if (hnItemRegex.test(itemURL)) {
-                continue;
-            }
+            if (hnItemRegex.test(itemURL)) { continue; }
 
             // get the subtext of the title, which contains the item id
             var subtext = title.parentNode.nextSibling.childNodes[1];
@@ -136,8 +134,7 @@ var scrapeAndUpdate = function (subdomain, numPages) {
 
     try {
         req.send(null);
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Scrape failed with error:\n\t" + error);
         return;
     }
@@ -179,14 +176,14 @@ var searchAndUpdate = function (tab) {
         var req = new XMLHttpRequest();
         req.open("GET", searchURL + tab.url, true);
 
-        req.onreadystatechange = function (aEvt) {
+        req.onreadystatechange = function () {
             // give up if request hasn't finished loading yet
-            if (req.readyState != 4) {
+            if (req.readyState !== 4) {
                 return;
             }
 
             // exit if we couldn't access the HNSearch server
-            if (req.status != 200) {
+            if (req.status !== 200) {
                 console.error("Could not access HNSearch: " + req.status +
                         ", " + req.statusText);
                 return;
@@ -201,7 +198,7 @@ var searchAndUpdate = function (tab) {
             var resultId = null;
             if (results["hits"] > 0) {
                 // get the result id from the response, which is only one item
-                item = results["results"][0]["item"];
+                var item = results["results"][0]["item"];
 
                 // return the found item id
                 resultId = item["id"];
@@ -211,7 +208,7 @@ var searchAndUpdate = function (tab) {
             // item id.
             if (resultId != null) {
                 // add the new URL to the global cache if need be
-                if (URL_CACHE[tab.url] == undefined) {
+                if (!URL_CACHE[tab.url]) {
                     console.log("Adding " + tab.url + " to cache with item id " +
                             resultId);
                     URL_CACHE[tab.url] = resultId;
@@ -229,8 +226,7 @@ var searchAndUpdate = function (tab) {
 
         try {
             req.send(null);
-        }
-        catch (error) {
+        } catch (error) {
             console.error("API search failed with error:\n\t" + error);
             return;
         }
@@ -242,7 +238,7 @@ var searchHandler = function (tabId, changeInfo, tab) {
     // run only when tab is loading. keeps from running twice when 'loading' as
     // well as when 'complete'. we run when 'loading' since it shows the icon
     // almost immediately rather than having to wait for the page to load first.
-    if (changeInfo.status == "loading") {
+    if (changeInfo.status === "loading") {
         // filter out certain urls
         for (var i = 0; i < FILTERS.length; i++) {
             var pattern = FILTERS[i];
@@ -297,5 +293,3 @@ setInterval(function () {
 // do an initial scrape, deeper than the periodic one
 console.log("Doing initial content scrape");
 scrapeHandler(2, 5);
-
-})();
